@@ -1,0 +1,5 @@
+[General]
+GH_BASE_URL = https://api.github.com
+GH_SEARCH_ENDPOINT = search/repositories
+GH_SEARCH_QUERY = Sha1-Hulud: The Second Coming. created:>=2025-11-24T03:00:00 sort:created
+OUTPUT_FILE = results.json
