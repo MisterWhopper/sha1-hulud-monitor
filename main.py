@@ -69,21 +69,25 @@ def try_get_environment_from_name(full_name: str):
     return results.text
 
 def process_data(item: dict):
-    project_name = item["full_name"]
-    environment_data = try_get_environment_from_name(item["full_name"])
-    if environment_data is None:
-        print(f"[WARNING] - Could not find environment data for '{item['full_name']}'; skipping...")
+    try:
+        project_name = item["full_name"]
+        environment_data = try_get_environment_from_name(item["full_name"])
+        if environment_data is None:
+            print(f"[WARNING] - Could not find environment data for '{item['full_name']}'; skipping...")
+            return None
+        stage1 = base64.b64decode(environment_data.encode("utf-8"))
+        stage2 = base64.b64decode(stage1)
+        final_data = json.loads(stage2.decode("utf-8"))
+        package_name = final_data["environment"].get("npm_package_name")
+        package_version = final_data["environment"].get("npm_package_version")
+        if package_name is None or package_version is None:
+            print(f"[ERROR] - Could not find npm package information in environment variables for '{project_name}'")
+            return None
+        print(f"\tProject '{item['full_name']}':\t\t{package_name}:{package_version}")
+        return (project_name, f"{package_name}:{package_version}", item["created_at"])
+    except:
+        print(f"[ERROR] - Unexpected error while processing data for project '{item.get("full_name", "N/A")}'; skipping...")
         return None
-    stage1 = base64.b64decode(environment_data.encode("utf-8"))
-    stage2 = base64.b64decode(stage1)
-    final_data = json.loads(stage2.decode("utf-8"))
-    package_name = final_data["environment"].get("npm_package_name")
-    package_version = final_data["environment"].get("npm_package_version")
-    if package_name is None or package_version is None:
-        print(f"[ERROR] - Could not find npm package information in environment variables for '{project_name}'")
-        return None
-    print(f"\tProject '{item['full_name']}':\t\t{package_name}:{package_version}")
-    return (project_name, f"{package_name}:{package_version}", item["created_at"])
 
 def main():
     config = ConfigParser()
