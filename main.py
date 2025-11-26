@@ -12,20 +12,27 @@ CONFIG_PATH = BASE_DIR / "config.ini"
 TOTAL_PAGES_RE = re.compile(r'page=(\d+)>;\s*rel="last"')
 
 def load_secrets(config: ConfigParser) -> Optional[dict[str, str]]:
-    from infisical_sdk import InfisicalSDKClient
-    inf_creds = config["Secrets"]
-    client = InfisicalSDKClient(host=inf_creds.get("INF_BASE_URL", ""))
-    client.auth.universal_auth.login(
-        client_id=inf_creds.get("INF_CLIENT_ID", ""),
-        client_secret=inf_creds.get("INF_CLIENT_SECRET", "")
-    )
-    secrets = client.secrets.list_secrets(
-            project_id=inf_creds.get("INF_PROJECT_ID", ""),
-            environment_slug=inf_creds.get("INF_ENVIRONMENT", "dev"),
-            secret_path=inf_creds.get("INF_SECRET_PATH", "/")
-    )
-    # Convert to dictionary for easier lookup
-    return {s.secretKey: s.secretValue for s in secrets.secrets}
+    try:
+        from infisical_sdk import InfisicalSDKClient
+        inf_creds = config["Secrets"]
+        client = InfisicalSDKClient(host=inf_creds.get("INF_BASE_URL", ""))
+        client.auth.universal_auth.login(
+            client_id=inf_creds.get("INF_CLIENT_ID", ""),
+            client_secret=inf_creds.get("INF_CLIENT_SECRET", "")
+        )
+        secrets = client.secrets.list_secrets(
+                project_id=inf_creds.get("INF_PROJECT_ID", ""),
+                environment_slug=inf_creds.get("INF_ENVIRONMENT", "dev"),
+                secret_path=inf_creds.get("INF_SECRET_PATH", "/")
+        )
+        # Convert to dictionary for easier lookup
+        return {s.secretKey: s.secretValue for s in secrets.secrets}
+    except (ImportError, ModuleNotFoundError):
+        print("Tried to pull secrets using configuration, but infisical SDK is not installed")
+        return None
+    except:
+        print("Error while attempting to pull secrets; continuing without authentication")
+        return None
 
 
 def get_github_search_results(config: ConfigParser, secret_data=None):
